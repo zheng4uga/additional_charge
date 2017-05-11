@@ -8,12 +8,29 @@
 class AdditionalCharge {
     
         private static $initiated = false;
-        private static $domain='addtional_charge';
+        public static $rates_default=array('0.10','0.15','0.18','0.20');
+        public static $domain=ADDITIONAL_CHARGE_DOMAIN;
+        
+        public static $rate_var ='ac-charge-rates';
+        public static $heading_var='ac-heading';
+        public static $message_var='ac-message';
+        public static $btn_var='ac-btn';
+        public static $fee_label_var='ac-fee-label';
+
+        protected static $default_btn;
+        protected static $default_message;
+        protected static $default_heading;
+        protected static $default_fee_label;
+        
         
         public static function init() {
 		if ( ! self::$initiated ) {
 			self::init_hooks();
 		}
+                self::$default_btn = __("Add Charge",self::$domain);
+                self::$default_heading = __("Additional Charge",self::$domain);
+                self::$default_message= __("Charge has been added",self::$domain);
+                self::$default_fee_label= __("Additional Charge",self::$domain);
         }
         /**
 	 * Initializes WordPress hooks
@@ -37,8 +54,10 @@ class AdditionalCharge {
                 $cost = filter_input(INPUT_POST,'charge',FILTER_VALIDATE_FLOAT);
                 $charge = floatval($cost);
                 if($charge!=0.0){
+                    $option_message = get_option(self::$message_var);
+                     $message = empty($option_message)?self::$default_message:$option_message;
                     $_SESSION['charge_value']=$charge;
-                    echo json_encode(array("status"=>1,"message"=>__("Tip has been added","shundao")));
+                    echo json_encode(array("status"=>1,"message"=>$message));
                 }else{
                     echo json_encode(array("status"=>0,"message"=>__("Failed to add tip","shundao")));
                 }
@@ -49,8 +68,8 @@ class AdditionalCharge {
             $cart=$woocommerce->cart;
             $charge=$_SESSION['charge_value'];
             if($charge!=null){
-                $tip_label=__("Additional Charge:",self::$domain);
-                $cart->add_fee($tip_label,$charge);
+                $charge_label= empty(get_option(self::$fee_label_var))?self::$default_fee_label:get_option(self::$fee_label_var);
+                $cart->add_fee($charge_label,$charge);
                 unset($_SESSION['charge_value']);
             }
         }
@@ -93,8 +112,37 @@ class AdditionalCharge {
 	 * @static
 	 */
 	public static function plugin_activation() {
-
+                if(!class_exists( 'WooCommerce' )){
+                    self::failActivation(__("WooCommerce is require for this plugin",ADDITIONAL_CHARGE_DOMAIN));
+                    // woocommerce doesn't exist
+                    exit;
+                }
 	}
+        
+        private static function failActivation($message){
+    
+           ?>
+           <html>
+            <head>
+            <meta charset="<?php bloginfo( 'charset' ); ?>">
+            <style>
+            * {
+                    text-align: center;
+                    margin: 0;
+                    padding: 0;
+                    font-family: "Lucida Grande",Verdana,Arial,"Bitstream Vera Sans",sans-serif;
+            }
+            p {
+                    margin-top: 1em;
+                    font-size: 18px;
+            }
+            </style>
+            <body>
+            <p><?php echo esc_html( $message ); ?></p>
+            </body>
+            </html>
+    <?php
+        }
 
 	/**
 	 * Removes all connection options
@@ -107,7 +155,12 @@ class AdditionalCharge {
         public static function add_additional_charge_section(){
             global $woocommerce;
             //TODO: need to the rate to the admin page
-            $rates = array(0.10,0.15,0.18,0.20);
+            $option_rates = get_option(self::$rate_var);
+            $option_heading = get_option(self::$heading_var);
+            $option_btn= get_option(self::$btn_var);
+            $rates = empty($option_rates)?self::$rates_default:explode(',', $option_rates);
+            $heading = empty($option_heading)?self::$default_heading:$option_heading;
+            $btn = empty($option_btn)?self::$default_btn:$option_btn;
             // we handle output the additional charge to woocommerce section
             $cart_total = $woocommerce->cart->cart_contents_total;
         ?>
@@ -115,7 +168,7 @@ class AdditionalCharge {
                 <p class="addtional-charge-info"></p>
             </div>
             <div class="additional-charge-cont">
-                <h4><?php _e("Additional Charge", self::$domain); ?><div id="ac-spinner" class="ac-spinner"></div></h4>
+                <h4><?php echo $heading;  ?><div id="ac-spinner" class="ac-spinner"></div></h4>
                 <div class="addtional-charge-radio-cont">
                     <p class="addtional-charge-message do-not-show"></p>
                     <?php for($i=0;$i<count($rates);$i++){ ?>
@@ -125,14 +178,14 @@ class AdditionalCharge {
                                name="ac-radios" 
                                value="<?php echo (number_format(($rates[$i] * $cart_total),2)); ?>">
                         <label for="ac-radio-<?php echo $i ?>">
-                            <?php echo ($rates[$i] * 100)."% ($".(number_format(($rates[$i] * $cart_total),2)).")";?>
+                            <?php echo (number_format($rates[$i] * 100))."% ($".(number_format(($rates[$i] * $cart_total),2)).")";?>
                         </label>
                     <?php } ?>
                         
                       <div class="additional-charge-control">
                         <input type="text" name="additional-charge-value" 
                                class="input-text-ac" id="input-text-ac" value="">
-                        <button id="ac-add-charge" type="button"><?php _e("Add Charge",self::$domain) ?></button>
+                        <button id="ac-add-charge" type="button"><?php echo $btn; ?></button>
                       </div>    
                 </div>
             </div>

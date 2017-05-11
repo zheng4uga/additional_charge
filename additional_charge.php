@@ -38,6 +38,7 @@ if ( !function_exists( 'add_action' ) ) {
 
 define( 'ADDITIONAL_CHARGE__PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ADDITIONAL_CHARGE_DELETE_LIMIT', 100000 );
+define(' ADDITIONAL_CHARGE_DOMAIN','addtional_charge');
 
 register_activation_hook( __FILE__, array( 'AdditionalCharge', 'plugin_activation' ) );
 register_deactivation_hook( __FILE__, array( 'AdditionalCharge', 'plugin_deactivation' ) );
