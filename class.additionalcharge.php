@@ -47,8 +47,12 @@ class AdditionalCharge {
                 add_action('wp_ajax_nopriv_add_charge',array('AdditionalCharge','add_charge'),10);
                 add_action('wp_ajax_add_charge',array('AdditionalCharge','add_charge'),10);
                 add_action('woocommerce_cart_calculate_fees', array('AdditionalCharge','add_charge_cost_from_session'),10);
-
+                add_action('woocommerce_thankyou',array('AdditionalCharge','unset_charge_session'),10);
 	}
+        public static function unset_charge_session(){
+            // we need to unset the charge value in the session after order has been placed
+            unset($_SESSION['charge_value']);// try to unset the session before checkout cart begin
+        }
         
         public static function add_charge(){            
                 $cost = filter_input(INPUT_POST,'charge',FILTER_VALIDATE_FLOAT);
@@ -64,13 +68,11 @@ class AdditionalCharge {
                 exit();
         }
         public static function add_charge_cost_from_session() {
-            global $woocommerce;
-            $cart=$woocommerce->cart;
+            $cart= wc()->cart;
             $charge=$_SESSION['charge_value'];
-            if($charge!=null){
+            if(!empty($charge)){
                 $charge_label= empty(get_option(self::$fee_label_var))?self::$default_fee_label:get_option(self::$fee_label_var);
                 $cart->add_fee($charge_label,$charge);
-                unset($_SESSION['charge_value']);
             }
         }
         
