@@ -28,4 +28,8 @@ Provide a way for customer to add additional charge to WooCommerce checkout. It 
 * Provide a default css with default style
 * Provide an additional box under the note section that will allow customer to add their tips, donations, etc base on total price
 
+= 1.0.1 = 
+
+* Fixed issue where additional charge does not persist after checkout phrase on the woocommerce 3.8.x
+
 
